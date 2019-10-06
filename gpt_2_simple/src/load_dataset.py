@@ -40,13 +40,12 @@ def load_dataset(enc, path, combine):
         else:
             # Plain text
             with open(path, 'r', encoding='utf8', errors='ignore') as fp:
-                raw_text += fp.read()
-            if len(raw_text) >= combine:
-                tokens = np.stack(enc.encode(raw_text))
-                token_chunks.append(tokens)
-                raw_text = ''
-            else:
-                raw_text += '<|endoftext|>'
+                for line in fp:
+                    tokens = enc.encode(line)
+                    for token in tokens:
+                        token_chunks.append(token)
+            if token_chunks: # FIXME: this works with only 1 file in path
+                token_chunks = [np.stack(token_chunks)]
     if raw_text:
         tokens = np.stack(enc.encode(raw_text))
         token_chunks.append(tokens)
