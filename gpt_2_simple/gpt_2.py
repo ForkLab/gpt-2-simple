@@ -21,7 +21,7 @@ except:
     pass
 
 from gpt_2_simple.src import model, sample, encoder, memory_saving_gradients
-from gpt_2_simple.src.load_dataset import load_dataset, Sampler
+from gpt_2_simple.src.load_dataset import load_dataset, Sampler, encode_plain
 from gpt_2_simple.src.accumulate import AccumulatingOptimizer
 
 
@@ -36,10 +36,10 @@ def download_file_with_progress(url_base, sub_dir, model_name, file_name):
     file_name : str
         name of file to get e.g. "hparams.json"
     sub_dir: str
-        subdirectory inside which to get and copy locally eg. "models/124M" 
+        subdirectory inside which to get and copy locally eg. "models/124M"
         no trailing slash
     url_base : str
-        Start of URL location specifying server and any base directories no 
+        Start of URL location specifying server and any base directories no
         trailing slash
         e.g. "https://storage.googleapis.com/gpt-2"
     """
@@ -54,7 +54,7 @@ def download_file_with_progress(url_base, sub_dir, model_name, file_name):
             for chunk in r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
                 f.write(chunk)
                 pbar.update(DOWNLOAD_CHUNK_SIZE)
-   
+
 
 def download_gpt2(model_dir='models', model_name='124M'):
     """Downloads the GPT-2 model into the current directory
@@ -66,8 +66,8 @@ def download_gpt2(model_dir='models', model_name='124M'):
         parent directory of model to download
 
     model_name : str
-        name of the GPT-2 model to download. 
-        As of 22 May 2019 one of "124M" or "355M" but may later include other 
+        name of the GPT-2 model to download.
+        As of 22 May 2019 one of "124M" or "355M" but may later include other
         model sizes
 
     Adapted from https://github.com/openai/gpt-2/blob/master/download_model.py
@@ -101,7 +101,7 @@ def start_tf_sess(threads=-1, server=None):
 
     if server is not None:
         return tf.compat.v1.Session(target=server.target, config=config)
-    
+
     return tf.compat.v1.Session(config=config)
 
 
@@ -305,7 +305,7 @@ def finetune(sess,
 
     if steps:
         steps = int(steps)
-    
+
     try:
         while True:
             if steps > 0 and counter == (counter_base + steps):
@@ -620,6 +620,23 @@ def encode_csv(csv_path, out_path='csv_encoded.txt', header=True,
                 w.write(start_token + row[0] + end_token + "\n")
 
 
+def encode_plain_dataset(file_path, model_dir='models', out_path='text_encoded.npz',
+                   model_name="124M",
+                   combine=50000):
+    """Memory efficient encoder single plaint text document into compressed chunks.
+
+    For Python 3.6 only now (https://github.com/numpy/numpy/blob/master/numpy/lib/npyio.py#L743)
+    And need correct content inside plain text document: with '<|startoftext|>' and '<|endoftext|>' in each line
+    """
+
+    if sys.version_info < (3, 6):
+        raise ValueError('Need Python 3.6 minimum')
+
+    model_path = os.path.join(model_dir, model_name)
+    enc = encoder.get_encoder(model_path)
+    encode_plain(enc, file_path, combine, out_path)
+
+
 def encode_dataset(file_path, model_dir='models', out_path='text_encoded.npz',
                    model_name="124M",
                    combine=50000):
@@ -645,7 +662,7 @@ def cmd():
     )
 
     # Explicit arguments
-    
+
     parser.add_argument(
         '--mode', help='Mode for using the CLI (either "finetune" or "generate") [Required]', nargs='?')
     parser.add_argument(
