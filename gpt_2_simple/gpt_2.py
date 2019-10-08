@@ -23,6 +23,7 @@ except:
 from gpt_2_simple.src import model, sample, encoder, memory_saving_gradients
 from gpt_2_simple.src.load_dataset import load_dataset, Sampler
 from gpt_2_simple.src.accumulate import AccumulatingOptimizer
+from gpt_2_simple.src.radam import RectifiedAdam
 
 
 def download_file_with_progress(url_base, sub_dir, model_name, file_name):
@@ -36,10 +37,10 @@ def download_file_with_progress(url_base, sub_dir, model_name, file_name):
     file_name : str
         name of file to get e.g. "hparams.json"
     sub_dir: str
-        subdirectory inside which to get and copy locally eg. "models/124M" 
+        subdirectory inside which to get and copy locally eg. "models/124M"
         no trailing slash
     url_base : str
-        Start of URL location specifying server and any base directories no 
+        Start of URL location specifying server and any base directories no
         trailing slash
         e.g. "https://storage.googleapis.com/gpt-2"
     """
@@ -54,7 +55,7 @@ def download_file_with_progress(url_base, sub_dir, model_name, file_name):
             for chunk in r.iter_content(chunk_size=DOWNLOAD_CHUNK_SIZE):
                 f.write(chunk)
                 pbar.update(DOWNLOAD_CHUNK_SIZE)
-   
+
 
 def download_gpt2(model_dir='models', model_name='124M'):
     """Downloads the GPT-2 model into the current directory
@@ -66,8 +67,8 @@ def download_gpt2(model_dir='models', model_name='124M'):
         parent directory of model to download
 
     model_name : str
-        name of the GPT-2 model to download. 
-        As of 22 May 2019 one of "124M" or "355M" but may later include other 
+        name of the GPT-2 model to download.
+        As of 22 May 2019 one of "124M" or "355M" but may later include other
         model sizes
 
     Adapted from https://github.com/openai/gpt-2/blob/master/download_model.py
@@ -101,7 +102,7 @@ def start_tf_sess(threads=-1, server=None):
 
     if server is not None:
         return tf.compat.v1.Session(target=server.target, config=config)
-    
+
     return tf.compat.v1.Session(config=config)
 
 
@@ -201,6 +202,8 @@ def finetune(sess,
         opt = tf.compat.v1.train.AdamOptimizer(learning_rate=learning_rate)
     elif optimizer == 'sgd':
         opt = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=learning_rate)
+    elif optimizer == 'radam':
+        opt = RectifiedAdam(learning_rate=learning_rate)
 
     if accumulate_gradients > 1:
         if use_memory_saving_gradients:
@@ -305,7 +308,7 @@ def finetune(sess,
 
     if steps:
         steps = int(steps)
-    
+
     try:
         while True:
             if steps > 0 and counter == (counter_base + steps):
@@ -645,7 +648,7 @@ def cmd():
     )
 
     # Explicit arguments
-    
+
     parser.add_argument(
         '--mode', help='Mode for using the CLI (either "finetune" or "generate") [Required]', nargs='?')
     parser.add_argument(
@@ -679,7 +682,7 @@ def cmd():
         '--print_every',  help="[finetune] After how many steps to print progress",
         nargs='?', default=10, type=int)
     parser.add_argument(
-        '--optimizer',  help="[finetune] Optimizer to use for finetuning (adam or sgd)",
+        '--optimizer',  help="[finetune] Optimizer to use for finetuning (adam or sgd or radam)",
         nargs='?', default='adam')
     parser.add_argument(
         '--overwrite',  help="[finetune] Overwrite existing model when continuing training",
