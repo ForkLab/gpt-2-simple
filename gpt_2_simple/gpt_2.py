@@ -747,7 +747,7 @@ def cmd():
         '--top_p',  help="[generate] Sample from top p prob (overrides top_k if nonzero)",
         nargs='?', default=0.0, type=float)
     parser.add_argument(
-        '--batch_size',  help="[generate] Batch size for generation (increase for GPUs)",
+        '--batch_size',  help="[finetune/generate] Batch size for generation (increase for GPUs)",
         nargs='?', default=1, type=int)
     parser.add_argument(
         '--prefix',  help="[generate] Prefix for generated texts",
@@ -783,6 +783,7 @@ def cmd():
                      print_every=args.print_every,
                      optimizer=args.optimizer,
                      overwrite=args.overwrite,
+                     batch_size=args.batch_size,
                      mixed_precision=args.mixed_precision)
     if args.mode == "generate":
         cmd_generate(nfiles=args.nfiles, nsamples=args.nsamples,
@@ -797,7 +798,7 @@ def cmd():
 
 def cmd_finetune(dataset, run_name, checkpoint_dir, model_name, model_dir, steps,
                  restore_from, sample_every,
-                 save_every, print_every, optimizer, overwrite, mixed_precision):
+                 save_every, print_every, optimizer, overwrite, batch_size, mixed_precision):
     """Wrapper script for finetuning the model via the CLI."""
 
     if not is_gpt2_downloaded(model_dir=model_dir, model_name=model_name):
@@ -816,6 +817,7 @@ def cmd_finetune(dataset, run_name, checkpoint_dir, model_name, model_dir, steps
              print_every=print_every,
              optimizer=optimizer,
              overwrite=overwrite,
+             batch_size=batch_size,
              mixed_precision=mixed_precision)
 
 
