@@ -5,6 +5,54 @@ import random
 import tensorflow as tf
 import tqdm
 import csv
+import zipfile
+from itertools import (takewhile, repeat)
+
+
+def encode_plain(enc, path, combine, out_path):
+    """Numpy._savez implemenation for line by line reading dataset and saving as compressed npz
+       https://github.com/numpy/numpy/blob/1e623f8/numpy/lib/npyio.py#L720-L784
+    """
+
+    def write_to_npz(tokens, zipf, arr_i):
+        fname = 'arr_%d.npy' % arr_i
+        tokens = np.asanyarray(tokens)
+        with zipf.open(fname, 'w', force_zip64=True) as fid:
+            np.lib.format.write_array(fid, tokens, allow_pickle=True, pickle_kwargs=None)
+
+    def file_lines_count(filename):
+        f = open(filename, 'rb')
+        bufgen = takewhile(lambda x: x, (f.raw.read(1024*1024) for _ in repeat(None)))
+        return sum(buf.count(b'\n') for buf in bufgen if buf)
+
+    if not path.endswith('.txt'):
+        raise ValueError('Only support *.txt encoding')
+
+    arr_i = 0
+    raw_text = ''
+
+    file_lines = file_lines_count(path)
+
+    if not hasattr(out_path, 'read'):
+        out_path = os.fspath(out_path)
+    zipf = zipfile.ZipFile(out_path, mode="w", compression=zipfile.ZIP_DEFLATED, allowZip64=True)
+
+    with open(path, 'r', encoding='utf8', errors='ignore') as fp:
+        for i, line in enumerate(tqdm.tqdm(fp, total=file_lines)):
+            raw_text += line
+
+            if len(raw_text) >= combine:
+                tokens = np.stack(enc.encode(raw_text))
+                raw_text = ''
+
+                write_to_npz(tokens, zipf, arr_i)
+                arr_i += 1
+
+    if raw_text:
+        tokens = np.stack(enc.encode(raw_text))
+        write_to_npz(tokens, zipf, arr_i)
+
+    zipf.close()
 
 
 def load_dataset(enc, path, combine):

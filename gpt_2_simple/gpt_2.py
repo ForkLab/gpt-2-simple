@@ -22,7 +22,7 @@ except:
     pass
 
 from gpt_2_simple.src import model, sample, encoder, memory_saving_gradients
-from gpt_2_simple.src.load_dataset import load_dataset, Sampler
+from gpt_2_simple.src.load_dataset import load_dataset, Sampler, encode_plain
 from gpt_2_simple.src.accumulate import AccumulatingOptimizer
 from gpt_2_simple.src.adafactor import AdafactorOptimizer
 
@@ -641,6 +641,22 @@ def encode_csv(csv_path, out_path='csv_encoded.txt', header=True,
             reader = csv.reader(f)
             for row in reader:
                 w.write(start_token + row[0] + end_token + "\n")
+
+
+def encode_plain_dataset(file_path, model_dir='models', out_path='text_encoded.npz',
+                         model_name="124M",
+                         combine=50000):
+    """Memory efficient encoder single plaint text document into compressed chunks.
+       For Python 3.6 only now (https://github.com/numpy/numpy/blob/1e623f8/numpy/lib/npyio.py#L745)
+       And need correct content inside plain text document with '<|startoftext|>' and '<|endoftext|>' in each line
+    """
+
+    if sys.version_info < (3, 6):
+        raise ValueError('Need Python 3.6 minimum')
+
+    model_path = os.path.join(model_dir, model_name)
+    enc = encoder.get_encoder(model_path)
+    encode_plain(enc, file_path, combine, out_path)
 
 
 def encode_dataset(file_path, model_dir='models', out_path='text_encoded.npz',
