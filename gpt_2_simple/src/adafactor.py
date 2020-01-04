@@ -25,7 +25,7 @@ from tensorflow.python.framework import function
 
 
 
-class AdafactorOptimizer(tf.compat.v1.train.Optimizer):
+class AdafactorOptimizer(tf.train.Optimizer):
   """Optimizer that implements the Adafactor algorithm.
 
   Adafactor is described in https://arxiv.org/abs/1804.04235.
