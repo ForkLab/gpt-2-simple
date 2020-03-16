@@ -724,6 +724,9 @@ def cmd():
         '--overwrite',  help="[finetune] Overwrite existing model when continuing training",
         nargs='?', default=False, type=lambda x: (str(x).lower() == 'true'))
     parser.add_argument(
+        '--max_checkpoints',  help="[finetune] Max checkpoints to save",
+        nargs='?', default=1, type=int)
+    parser.add_argument(
         '--nfiles',  help="[generate] How many files to generate.",
         nargs='?', default=1, type=int)
     parser.add_argument(
@@ -785,7 +788,8 @@ def cmd():
                      optimizer=args.optimizer,
                      overwrite=args.overwrite,
                      batch_size=args.batch_size,
-                     multi_gpu=args.multi_gpu)
+                     multi_gpu=args.multi_gpu,
+                     max_checkpoints=args.max_checkpoints)
     if args.mode == "generate":
         cmd_generate(nfiles=args.nfiles, nsamples=args.nsamples,
                      folder=args.folder, length=args.length,
@@ -799,7 +803,8 @@ def cmd():
 
 def cmd_finetune(dataset, run_name, checkpoint_dir, model_name, model_dir, steps,
                  restore_from, sample_every,
-                 save_every, print_every, optimizer, overwrite, batch_size, multi_gpu):
+                 save_every, print_every, optimizer, overwrite, batch_size, multi_gpu,
+                 max_checkpoints):
     """Wrapper script for finetuning the model via the CLI."""
 
     if not is_gpt2_downloaded(model_dir=model_dir, model_name=model_name):
@@ -816,7 +821,8 @@ def cmd_finetune(dataset, run_name, checkpoint_dir, model_name, model_dir, steps
              optimizer=optimizer,
              overwrite=overwrite,
              batch_size=batch_size,
-             multi_gpu=multi_gpu)
+             multi_gpu=multi_gpu,
+             max_checkpoints=max_checkpoints)
 
 
 def cmd_generate(nfiles, nsamples, folder,
